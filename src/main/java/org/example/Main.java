@@ -13,22 +13,7 @@ import java.util.List;
 public class Main {
     //Replace YOUR_API_KEY with your actual API key
     String apiKey = "35f9736be042660d1010";
-    List<Translations> translations = new ArrayList<>();
-    List<String> fileNames = new ArrayList<>();
-
-    // Walk through the directory tree and get the names of all files
-    String path = "files";
-
-    //Tags to find
-    List<String> tags = Arrays.asList(
-            "h1",
-            "li",
-            "h3",
-            "label",
-            "option",
-            "th",
-            "button",
-            "small");
+    static String pathOfFilesToTranslate = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/html-original";
 
     //Set the source and target languages
     String srcLang = "tr";
@@ -47,7 +32,8 @@ public class Main {
 
     public static void main(String[] args) {
         //jSoupParse();
-        jSoupParseFromHtmlText();
+        //jSoupParseFromHtmlText();
+        getFilenamesRecursively();
     }
 
     public static void jSoupParse() {
@@ -79,6 +65,16 @@ public class Main {
         }catch (Exception exception){
             System.out.println(exception.getMessage());
         }
+    }
+
+    public static void executeTranslations(){
+        //1. get all file names with absolute path recursively
+        //2. loop straight all off them find text and translate text update texts and save as file
+    }
+
+    public static void getFilenamesRecursively(){
+        File folder = new File(pathOfFilesToTranslate);
+        File[] listOfFiles = folder.listFiles();
     }
 }
 
