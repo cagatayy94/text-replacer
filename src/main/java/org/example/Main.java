@@ -7,6 +7,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,6 +20,7 @@ public class Main {
     //Replace YOUR_API_KEY with your actual API key
     String apiKey = "35f9736be042660d1010";
     static String pathOfFilesToTranslate = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/html-original";
+    static String pathOfTranslatedFiles = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/html-translated";
 
     //Set the source and target languages
     String srcLang = "tr";
@@ -81,6 +84,7 @@ public class Main {
         File[] listOfFiles = folder.listFiles();
 
         for (File file : listOfFiles){
+
             if (file.isDirectory()){
                 getFilenamesRecursively(file);
                 continue;
@@ -89,29 +93,47 @@ public class Main {
                     try {
                         Document document = Jsoup.parse(file);
 
+                        // Filter tags and crappy elements
+                        for(Element e: document.getAllElements()){
+                            if (e.hasText()){
+                                if (!e.html().contains("<") &&
+                                    !e.html().contains("?") &&
+                                    !e.html().contains(">")
+                                ){
+                                    String textToTranslate = e.html();
 
-                        CharSequence charSequence = "asdsadadsa";
+                                    // ##TODO 1. check the text in cache if its there get translate from there
+                                    // ##TODO 2. make api call for translation
+                                    // ##TODO 3. save result to cache
+                                    String translatedText = "zubidubi";
+
+                                    e.html(translatedText);
 
 
+                                    System.out.println("not contains :" + e.html());
+                                }
+                            }
 
-                        List<Element> elements = document.getAllElements().stream()
-                                .filter( element -> element.hasText())
-                                .filter( element -> element.text().contains(charSequence))
-                                .collect(Collectors.toList());
-                        break;
+
+                        }
+
+                        File translatedFile = new File(pathOfTranslatedFiles+"/"+ file.getPath().substring(71));
+                        translatedFile.getParentFile().mkdirs();
+                        if (translatedFile.createNewFile()) {
+                            PrintWriter writer = new PrintWriter(translatedFile, StandardCharsets.UTF_8);
+                            writer.println(document.html());
+                            writer.close();
+                        }else{
+                            throw new Exception("File cannot created");
+                        }
 
                     }catch (Exception e){
-                        System.out.println(e.getMessage());
+                        System.err.println(e.getMessage());
                     }
-
-                    //  ##TODO translate
-                    System.out.println(file.getAbsolutePath());
                 }
             }
-            break;
 
         }
-    return;
     }
 }
 
