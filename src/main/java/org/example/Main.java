@@ -1,5 +1,9 @@
 package org.example;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,17 +14,17 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Main {
     //Replace YOUR_API_KEY with your actual API key
     String apiKey = "35f9736be042660d1010";
-    static String pathOfFilesToTranslate = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/html-original";
+    static String pathOfFilesToTranslate = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/messages_tr.properties";
     static String pathOfTranslatedFiles = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/html-translated";
 
     //Set the source and target languages
@@ -39,18 +43,75 @@ public class Main {
 
 
     public static void main(String[] args) {
-        //jSoupParse();
-        //jSoupParseFromHtmlText();
+        replaceTextByWordDoc();
+    }
 
-        String cacheFile = null;
+    public static void replaceTextByWordDoc(){
+        String messagesTrPath = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/messages_tr.properties";
+        String messagesRuPath = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/messages_ru.properties";
+        String excelFilePath = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/Translations.xlsx";
+
+        Path pathOfmessagesTr = Paths.get(messagesTrPath);
+        Path pathOfmessagesRu = Paths.get(messagesRuPath);
+        Path pathOfWordFile = Paths.get(excelFilePath);
+
+
+        HashMap<String, String> trRuMap = extracted(pathOfmessagesTr, pathOfmessagesRu, pathOfWordFile);
+
+
+
+    }
+
+    private static HashMap<String, String> extracted(Path pathOfmessagesTr, Path pathOfmessagesRu, Path pathOfWordFile) {
         try {
-            cacheFile = Files.readString(Path.of("/Users/cyilmaz/Projects/text-replacer/src/main/resources/cache/translations.json"));
-        } catch (IOException e) {
+            String messagesTr = Files.readString(pathOfmessagesTr, StandardCharsets.UTF_8);
+            System.out.println(messagesTr);
+
+            String messagesRu = Files.readString(pathOfmessagesRu, StandardCharsets.UTF_8);
+            System.out.println(messagesRu);
+
+            FileInputStream file = new FileInputStream(pathOfWordFile.toFile());
+
+            //Create Workbook instance holding reference to .xlsx file
+            XSSFWorkbook workbook = new XSSFWorkbook(file);
+
+            //Get first/desired sheet from the workbook
+            XSSFSheet sheet = workbook.getSheetAt(0);
+
+            //Iterate through each rows one by one
+            Iterator<Row> rowIterator = sheet.iterator();
+            HashMap<String, String> trRuMap = new HashMap<>();
+            List<String> cols = new ArrayList<>();
+
+            while (rowIterator.hasNext())
+            {
+                Row row = rowIterator.next();
+                //For each row, iterate through all the columns
+                Iterator<Cell> cellIterator = row.cellIterator();
+
+                int colOrder = 0;
+                while (cellIterator.hasNext())
+                {
+                    Cell cell = cellIterator.next();
+                    //Check the cell type and format accordingly
+                    cols.add(colOrder, cell.getStringCellValue() + "\t");
+                    colOrder++;
+                }
+
+                trRuMap.put(cols.get(0), cols.get(1));
+            }
+
+            System.out.println(trRuMap.get("deneme"));
+            file.close();
+
+            return trRuMap;
+
+
+
+
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        JSONObject cache = new JSONObject(cacheFile);
-
-        getFilenamesRecursively(new File(pathOfFilesToTranslate), cache);
     }
 
     public static void jSoupParse() {
@@ -191,4 +252,6 @@ public class Main {
         return "asd";
     }
 }
+
+
 
