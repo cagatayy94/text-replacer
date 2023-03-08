@@ -27,6 +27,12 @@
             <version>31.0.1-jre</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20220924</version>
+        </dependency>
+
     </dependencies>
 
 </project>

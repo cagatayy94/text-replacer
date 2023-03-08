@@ -1,20 +1,21 @@
 package org.example;
 
-import com.google.common.io.Files;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.File;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Main {
     //Replace YOUR_API_KEY with your actual API key
@@ -24,10 +25,10 @@ public class Main {
 
     //Set the source and target languages
     String srcLang = "tr";
-    String tgt_lang = "en";
+    String tgtLang = "en";
 
     //Set the API endpoint and headers
-    String endpoint = "https://api.mymemory.translated.net/get";
+    static String endpoint = "http://api.mymemory.translated.net/get";
     String headers = "Content-Type': 'application/x-www-form-urlencoded";
 
     //Extract the text from the elements you want to translate
@@ -40,8 +41,16 @@ public class Main {
     public static void main(String[] args) {
         //jSoupParse();
         //jSoupParseFromHtmlText();
-        ;
-        getFilenamesRecursively(new File(pathOfFilesToTranslate));
+
+        String cacheFile = null;
+        try {
+            cacheFile = Files.readString(Path.of("/Users/cyilmaz/Projects/text-replacer/src/main/resources/cache/translations.json"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        JSONObject cache = new JSONObject(cacheFile);
+
+        getFilenamesRecursively(new File(pathOfFilesToTranslate), cache);
     }
 
     public static void jSoupParse() {
@@ -80,13 +89,13 @@ public class Main {
         //2. loop straight all off them find text and translate text update texts and save as file
     }
 
-    public static void getFilenamesRecursively(File folder){
+    public static void getFilenamesRecursively(File folder, JSONObject cache){
         File[] listOfFiles = folder.listFiles();
 
         for (File file : listOfFiles){
 
             if (file.isDirectory()){
-                getFilenamesRecursively(file);
+                getFilenamesRecursively(file, cache);
                 continue;
             }else {
                 if (file.isFile()){
@@ -105,16 +114,21 @@ public class Main {
                                     // ##TODO 1. check the text in cache if its there get translate from there
                                     // ##TODO 2. make api call for translation
                                     // ##TODO 3. save result to cache
-                                    String translatedText = "zubidubi";
 
-                                    e.html(translatedText);
+                                    String translation = null;
+                                    if (cache.has(textToTranslate.toLowerCase())){
+                                        translation = cache.get(textToTranslate.toLowerCase()).toString();
+                                    }
 
+                                    if (translation == null || translation.isEmpty() || translation.isBlank()){
+                                        translation = translate(textToTranslate);
+                                    }
 
-                                    System.out.println("not contains :" + e.html());
+                                    e.html(translation);
+
+                                    System.out.println("successfully translated :"+ textToTranslate + ":"+translation);
                                 }
                             }
-
-
                         }
 
                         File translatedFile = new File(pathOfTranslatedFiles+"/"+ file.getPath().substring(71));
@@ -135,6 +149,46 @@ public class Main {
 
         }
     }
-}
 
+    public static String translate(String target){
+        URL url = null;
+        try {
+            url = new URL(endpoint);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            Map<String, String> parameters = new HashMap<>();
+            parameters.put("langpair", "tr|en");
+            parameters.put("mt", "0");
+            parameters.put("q", target.toLowerCase());
+            conn.setDoOutput(true);
+            DataOutputStream out = new DataOutputStream(conn.getOutputStream());
+            out.writeBytes(ParameterStringBuilder.getParamsString(parameters));
+
+            BufferedReader br = null;
+            if (100 <= conn.getResponseCode() && conn.getResponseCode() <= 399) {
+                br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            } else {
+                br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+            }
+
+            String responseBody = br.lines().collect(Collectors.joining());
+            int responsecode = conn.getResponseCode();
+
+            out.flush();
+            out.close();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return "asd";
+    }
+}
 
