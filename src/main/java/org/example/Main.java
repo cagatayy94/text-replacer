@@ -53,24 +53,63 @@ public class Main {
 
         Path pathOfmessagesTr = Paths.get(messagesTrPath);
         Path pathOfmessagesRu = Paths.get(messagesRuPath);
-        Path pathOfWordFile = Paths.get(excelFilePath);
+        Path pathOfExcelFile = Paths.get(excelFilePath);
 
+        HashMap<String, String> originalFileContent = getContentMap(pathOfmessagesTr);
+        HashMap<String, String> trRuMap = extracted(pathOfExcelFile);
 
-        HashMap<String, String> trRuMap = extracted(pathOfmessagesTr, pathOfmessagesRu, pathOfWordFile);
+        trRuMap.forEach((trRuMapKey, trRuMapValue) -> {
+            System.out.println(trRuMapKey+"->"+trRuMapValue);
 
+            if (originalFileContent.containsValue(trRuMapKey)){
 
+                //looking at originalFileContent has value as trRuMapKey
+                String keyOfOriginalFileContentElement = getKeyFromValue(originalFileContent, trRuMapKey);
+                originalFileContent.put(keyOfOriginalFileContentElement, trRuMapValue);
+            }
+        });
 
+        try {
+            PrintWriter writer = new PrintWriter(messagesRuPath, "UTF-8");
+            originalFileContent.forEach((key, value) -> {
+                writer.println(key+"="+value);
+            });
+            writer.close();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private static HashMap<String, String> extracted(Path pathOfmessagesTr, Path pathOfmessagesRu, Path pathOfWordFile) {
+    private static String getKeyFromValue(Map<String, String> map, String value) {
+        if (map.containsValue(value)) {
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                if (Objects.equals(entry.getValue(), value)) {
+                    return entry.getKey();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static HashMap<String, String> getContentMap(Path pathOfmessagesTr) {
         try {
-            String messagesTr = Files.readString(pathOfmessagesTr, StandardCharsets.UTF_8);
-            System.out.println(messagesTr);
+            HashMap<String, String> contentMap = new HashMap<>();
+            List<String> messagesFile = Files.readAllLines(pathOfmessagesTr, StandardCharsets.UTF_8);
+            messagesFile.forEach(n -> {
+                String[] mys = n.toString().split("=");
+                contentMap.put(mys[0].trim(), mys[1].trim().toLowerCase());
+            });
 
-            String messagesRu = Files.readString(pathOfmessagesRu, StandardCharsets.UTF_8);
-            System.out.println(messagesRu);
+            return contentMap;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-            FileInputStream file = new FileInputStream(pathOfWordFile.toFile());
+    private static HashMap<String, String> extracted(Path pathOfExcelFile) {
+        try {
+            FileInputStream file = new FileInputStream(pathOfExcelFile.toFile());
 
             //Create Workbook instance holding reference to .xlsx file
             XSSFWorkbook workbook = new XSSFWorkbook(file);
@@ -86,28 +125,27 @@ public class Main {
             while (rowIterator.hasNext())
             {
                 Row row = rowIterator.next();
-                //For each row, iterate through all the columns
-                Iterator<Cell> cellIterator = row.cellIterator();
 
-                int colOrder = 0;
-                while (cellIterator.hasNext())
-                {
-                    Cell cell = cellIterator.next();
-                    //Check the cell type and format accordingly
-                    cols.add(colOrder, cell.getStringCellValue() + "\t");
-                    colOrder++;
+                String tr = "";
+                String ru = "";
+
+                if (row.getCell(0) != null){
+                    tr = row.getCell(0).getStringCellValue().toLowerCase();
                 }
 
-                trRuMap.put(cols.get(0), cols.get(1));
+
+                if (row.getCell(1) != null){
+                    ru = row.getCell(1).getStringCellValue();
+                }
+
+                trRuMap.put(tr, ru);
+                System.out.println(tr+"=>"+ru);
+
             }
 
-            System.out.println(trRuMap.get("deneme"));
             file.close();
 
             return trRuMap;
-
-
-
 
         } catch (Exception e) {
             throw new RuntimeException(e);
