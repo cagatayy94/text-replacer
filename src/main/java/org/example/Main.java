@@ -1,6 +1,5 @@
 package org.example;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -19,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -55,23 +55,25 @@ public class Main {
         Path pathOfmessagesRu = Paths.get(messagesRuPath);
         Path pathOfExcelFile = Paths.get(excelFilePath);
 
-        HashMap<String, String> originalFileContent = getContentMap(pathOfmessagesTr);
+        HashMap<String, String> messagesTrProperties = getContentMap(pathOfmessagesTr);
         HashMap<String, String> trRuMap = extracted(pathOfExcelFile);
 
-        trRuMap.forEach((trRuMapKey, trRuMapValue) -> {
-            System.out.println(trRuMapKey+"->"+trRuMapValue);
+        messagesTrProperties.forEach((messagesTrPropertiesKey, messagesTrPropertiesVal) -> {
+            if (messagesTrPropertiesVal.length() > 20){
+                String searchValue = messagesTrPropertiesVal.substring(3, (messagesTrPropertiesVal.length()- 3)).toLowerCase();
 
-            if (originalFileContent.containsValue(trRuMapKey)){
-
-                //looking at originalFileContent has value as trRuMapKey
-                String keyOfOriginalFileContentElement = getKeyFromValue(originalFileContent, trRuMapKey);
-                originalFileContent.put(keyOfOriginalFileContentElement, trRuMapValue);
+                trRuMap.forEach((trRuMapKey, trRuMapValue)->{
+                    //process map keys
+                    if (trRuMapKey.contains(searchValue)){
+                        messagesTrProperties.put(messagesTrPropertiesKey, trRuMapValue.trim().replaceAll("\\u00a0", ""));
+                    }
+                });
             }
-        });
+        } );
 
         try {
             PrintWriter writer = new PrintWriter(messagesRuPath, "UTF-8");
-            originalFileContent.forEach((key, value) -> {
+            messagesTrProperties.forEach((key, value) -> {
                 writer.println(key+"="+value);
             });
             writer.close();
@@ -139,7 +141,6 @@ public class Main {
                 }
 
                 trRuMap.put(tr, ru);
-                System.out.println(tr+"=>"+ru);
 
             }
 
