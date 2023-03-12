@@ -48,7 +48,7 @@ public class Main {
 
     public static void replaceTextByWordDoc(){
         String messagesTrPath = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/messages_tr.properties";
-        String messagesRuPath = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/messages_ru.properties";
+        String messagesRuPath = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/messages_fr.properties";
         String excelFilePath = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original/Translations.xlsx";
 
         Path pathOfmessagesTr = Paths.get(messagesTrPath);
