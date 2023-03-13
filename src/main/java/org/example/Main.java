@@ -39,18 +39,20 @@ public class Main {
 
 
     public static void main(String[] args) {
-        //jSoupParse();
-        //jSoupParseFromHtmlText();
+        JSONObject cache = getCache();
+        List<String> filenames = getFilenamesRecursively(pathOfFilesToTranslate);
 
+        filenames.forEach(System.out::println);
+    }
+
+    private static JSONObject getCache() {
         String cacheFile = null;
         try {
             cacheFile = Files.readString(Path.of("/Users/cyilmaz/Projects/text-replacer/src/main/resources/cache/translations.json"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        JSONObject cache = new JSONObject(cacheFile);
-
-        getFilenamesRecursively(new File(pathOfFilesToTranslate), cache);
+        return new JSONObject(cacheFile);
     }
 
     public static void jSoupParse() {
@@ -89,61 +91,70 @@ public class Main {
         //2. loop straight all off them find text and translate text update texts and save as file
     }
 
-    public static void getFilenamesRecursively(File folder, JSONObject cache){
-        File[] listOfFiles = folder.listFiles();
+    public static List<String> getFilenamesRecursively(String pathOfFilesToTranslate){
+        File mainFolder = new File(pathOfFilesToTranslate);
+        
+        List<String> files = new ArrayList<>();
+        File[] subdirs = mainFolder.listFiles();
 
-        for (File file : listOfFiles){
+        for (File file : subdirs){
 
             if (file.isDirectory()){
-                getFilenamesRecursively(file, cache);
+                getFilenamesRecursively(file.getAbsolutePath());
             }else {
+                //
                 if (file.isFile()){
-                    try {
-                        Document document = Jsoup.parse(file);
+                    files.add(file.getAbsolutePath());
+                    //translateNewOne(cache, file);
+                }
+            }
+        }
+        return files;
+    }
 
-                        // Filter tags and crappy elements
-                        for(Element e: document.getAllElements()){
-                            if (e.hasText()){
-                                if (!e.html().contains("<") &&
-                                    !e.html().contains("?") &&
-                                    !e.html().contains(">")
-                                ){
-                                    String textToTranslate = e.html();
+    private static void translateNewOne(JSONObject cache, File file) {
+        try {
+            Document document = Jsoup.parse(file);
 
-                                    String translation = null;
-                                    if (cache.has(textToTranslate.toLowerCase())){
-                                        translation = cache.get(textToTranslate.toLowerCase()).toString();
-                                    }
+            // Filter tags and crappy elements
+            for(Element e: document.getAllElements()){
+                if (e.hasText()){
+                    if (!e.html().contains("<") &&
+                        !e.html().contains("?") &&
+                        !e.html().contains(">")
+                    ){
+                        String textToTranslate = e.html();
 
-                                    // ##TODO 2. make api call for translation
-                                    if (translation == null || translation.isEmpty() || translation.isBlank()){
-                                        translation = "Benim   çevrim bu";//translate(textToTranslate);
-                                        cache.put(textToTranslate, translation);
-                                    }
-
-                                    e.html(translation);
-
-                                    System.out.println("successfully translated :"+ textToTranslate + ":"+translation);
-                                }
-                            }
+                        String translation = null;
+                        if (cache.has(textToTranslate.toLowerCase())){
+                            translation = cache.get(textToTranslate.toLowerCase()).toString();
                         }
 
-                        File translatedFile = new File(pathOfTranslatedFiles+"/"+ file.getPath().substring(71));
-                        translatedFile.getParentFile().mkdirs();
-                        if (translatedFile.createNewFile()) {
-                            PrintWriter writer = new PrintWriter(translatedFile, StandardCharsets.UTF_8);
-                            writer.println(document.html());
-                            writer.close();
-                        }else{
-                            throw new Exception("File cannot created");
+                        // ##TODO 2. make api call for translation
+                        if (translation == null || translation.isEmpty() || translation.isBlank()){
+                            translation = "Benim   çevrim bu";//translate(textToTranslate);
+                            cache.put(textToTranslate, translation);
                         }
 
-                    }catch (Exception e){
-                        System.err.println(e.getMessage());
+                        e.html(translation);
+
+                        System.out.println("successfully translated :"+ textToTranslate + ":"+translation);
                     }
                 }
             }
 
+            File translatedFile = new File(pathOfTranslatedFiles+"/"+ file.getPath().substring(70));
+            translatedFile.getParentFile().mkdirs();
+            if (translatedFile.createNewFile()) {
+                PrintWriter writer = new PrintWriter(translatedFile, StandardCharsets.UTF_8);
+                writer.println(document.html());
+                writer.close();
+            }else{
+                throw new Exception("File cannot created");
+            }
+
+        }catch (Exception e){
+            System.err.println(e.getMessage());
         }
     }
 
