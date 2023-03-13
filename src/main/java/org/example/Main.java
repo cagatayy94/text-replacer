@@ -40,7 +40,8 @@ public class Main {
 
     public static void main(String[] args) {
         JSONObject cache = getCache();
-        List<String> filenames = getFilenamesRecursively(pathOfFilesToTranslate);
+        List<String> files = new ArrayList<>();
+        List<String> filenames = getFilenamesRecursively(pathOfFilesToTranslate, files);
 
         filenames.forEach(System.out::println);
     }
@@ -91,16 +92,14 @@ public class Main {
         //2. loop straight all off them find text and translate text update texts and save as file
     }
 
-    public static List<String> getFilenamesRecursively(String pathOfFilesToTranslate){
+    public static List<String> getFilenamesRecursively(String pathOfFilesToTranslate, List<String> files){
         File mainFolder = new File(pathOfFilesToTranslate);
-        
-        List<String> files = new ArrayList<>();
         File[] subdirs = mainFolder.listFiles();
 
         for (File file : subdirs){
 
             if (file.isDirectory()){
-                getFilenamesRecursively(file.getAbsolutePath());
+                getFilenamesRecursively(file.getAbsolutePath(), files);
             }else {
                 //
                 if (file.isFile()){
