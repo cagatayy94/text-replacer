@@ -43,7 +43,13 @@ public class Main {
         List<String> files = new ArrayList<>();
         List<String> filenames = getFilenamesRecursively(pathOfFilesToTranslate, files);
 
-        filenames.forEach(System.out::println);
+        filenames.forEach(filename -> {
+            translateNewOne(new File(filename), cache);
+        });
+
+        saveCache(cache);
+
+        System.out.println(cache);
     }
 
     private static JSONObject getCache() {
@@ -54,6 +60,14 @@ public class Main {
             throw new RuntimeException(e);
         }
         return new JSONObject(cacheFile);
+    }
+
+    private static void saveCache(JSONObject cacheFile) {
+        try {
+            Files.writeString(Path.of("/Users/cyilmaz/Projects/text-replacer/src/main/resources/cache/translations.json"), cacheFile.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void jSoupParse() {
@@ -111,7 +125,7 @@ public class Main {
         return files;
     }
 
-    private static void translateNewOne(JSONObject cache, File file) {
+    private static void translateNewOne(File file, JSONObject cache) {
         try {
             Document document = Jsoup.parse(file);
 
@@ -142,7 +156,7 @@ public class Main {
                 }
             }
 
-            File translatedFile = new File(pathOfTranslatedFiles+"/"+ file.getPath().substring(70));
+            File translatedFile = new File(file.getPath().substring(0, 56)+"/translated/"+file.getPath().substring(66));
             translatedFile.getParentFile().mkdirs();
             if (translatedFile.createNewFile()) {
                 PrintWriter writer = new PrintWriter(translatedFile, StandardCharsets.UTF_8);
