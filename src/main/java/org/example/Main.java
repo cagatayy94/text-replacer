@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 public class Main {
     //Replace YOUR_API_KEY with your actual API key
     String apiKey = "35f9736be042660d1010";
-    static String pathOfFilesToTranslate = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/html-original";
-    static String pathOfTranslatedFiles = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/html-translated";
+    static String pathOfFilesToTranslate = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/original";
+    static String pathOfTranslatedFiles = "/Users/cyilmaz/Projects/text-replacer/src/main/resources/translated";
 
     //Set the source and target languages
     String srcLang = "tr";
@@ -96,7 +96,6 @@ public class Main {
 
             if (file.isDirectory()){
                 getFilenamesRecursively(file, cache);
-                continue;
             }else {
                 if (file.isFile()){
                     try {
@@ -111,17 +110,15 @@ public class Main {
                                 ){
                                     String textToTranslate = e.html();
 
-                                    // ##TODO 1. check the text in cache if its there get translate from there
-                                    // ##TODO 2. make api call for translation
-                                    // ##TODO 3. save result to cache
-
                                     String translation = null;
                                     if (cache.has(textToTranslate.toLowerCase())){
                                         translation = cache.get(textToTranslate.toLowerCase()).toString();
                                     }
 
+                                    // ##TODO 2. make api call for translation
                                     if (translation == null || translation.isEmpty() || translation.isBlank()){
-                                        translation = translate(textToTranslate);
+                                        translation = "Benim   çevrim bu";//translate(textToTranslate);
+                                        cache.put(textToTranslate, translation);
                                     }
 
                                     e.html(translation);
