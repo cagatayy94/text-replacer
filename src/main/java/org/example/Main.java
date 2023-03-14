@@ -1,5 +1,6 @@
 package org.example;
 
+import org.apache.commons.io.FileUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,12 +42,20 @@ public class Main {
         List<String> files = new ArrayList<>();
         List<String> filenames = getFilenamesRecursively(pathOfFilesToTranslate, files);
 
-        //##TODO delete all subfiles in translated directory
+        cleanDirectory();
         filenames.forEach(filename -> {
             translateNewOne(new File(filename), cache);
         });
 
         saveOfflineCache(cache);
+    }
+
+    private static void cleanDirectory() {
+        try {
+            FileUtils.cleanDirectory(new File(pathOfTranslatedFiles + "/"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static JSONObject getCache() {
