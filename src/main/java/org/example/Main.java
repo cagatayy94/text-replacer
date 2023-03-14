@@ -29,27 +29,24 @@ public class Main {
 
     //Set the API endpoint and headers
     static String endpoint = "http://api.mymemory.translated.net/get";
+    static String fullEndpoint = "http://api.mymemory.translated.net/get?langpair=tr|en&mt=1&q=Yönetici Detayı";
     String headers = "Content-Type': 'application/x-www-form-urlencoded";
 
     //Extract the text from the elements you want to translate
     //all_soup_tags = soup.find_all(tags)
     //texts = [element.text for element in all_soup_tags]
 
-
-
-
     public static void main(String[] args) {
         JSONObject cache = getCache();
         List<String> files = new ArrayList<>();
         List<String> filenames = getFilenamesRecursively(pathOfFilesToTranslate, files);
 
+        //##TODO delete all subfiles in translated directory
         filenames.forEach(filename -> {
             translateNewOne(new File(filename), cache);
         });
 
-        saveCache(cache);
-
-        System.out.println(cache);
+        saveOfflineCache(cache);
     }
 
     private static JSONObject getCache() {
@@ -62,7 +59,7 @@ public class Main {
         return new JSONObject(cacheFile);
     }
 
-    private static void saveCache(JSONObject cacheFile) {
+    private static void saveOfflineCache(JSONObject cacheFile) {
         try {
             Files.writeString(Path.of("/Users/cyilmaz/Projects/text-replacer/src/main/resources/cache/translations.json"), cacheFile.toString());
         } catch (IOException e) {
@@ -134,18 +131,19 @@ public class Main {
                 if (e.hasText()){
                     if (!e.html().contains("<") &&
                         !e.html().contains("?") &&
+                        !e.html().contains("...") &&
                         !e.html().contains(">")
                     ){
                         String textToTranslate = e.html();
 
                         String translation = null;
-                        if (cache.has(textToTranslate.toLowerCase())){
-                            translation = cache.get(textToTranslate.toLowerCase()).toString();
+                        if (cache.has(textToTranslate)){
+                            translation = cache.get(textToTranslate).toString();
                         }
 
                         // ##TODO 2. make api call for translation
                         if (translation == null || translation.isEmpty() || translation.isBlank()){
-                            translation = "Benim   çevrim bu";//translate(textToTranslate);
+                            translation = apiCall(textToTranslate);//translate(textToTranslate);
                             cache.put(textToTranslate, translation);
                         }
 
@@ -168,6 +166,45 @@ public class Main {
 
         }catch (Exception e){
             System.err.println(e.getMessage());
+        }
+    }
+
+    public static String apiCall(String query) {
+        try{
+            String url = "https://api.mymemory.translated.net/get?langpair=tr|en&mt=1&q="+ URLEncoder.encode(query, StandardCharsets.UTF_8);
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            // optional default is GET
+            con.setRequestMethod("GET");
+            //add request header
+            con.setRequestProperty("User-Agent", "Mozilla/5.0");
+            int responseCode = con.getResponseCode();
+            System.out.println("\nSending 'GET' request to URL : " + url);
+            System.out.println("Response Code : " + responseCode);
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+            //print in String
+            System.out.println(response.toString());
+            //Read JSON response and print
+            JSONObject myResponse = new JSONObject(response.toString());
+            JSONObject myResponseData = new JSONObject(myResponse.get("responseData").toString());
+
+            if (Objects.equals(myResponse.get("responseStatus"), 200)){
+                return myResponseData.getString("translatedText");
+            }
+
+            System.out.println("Api call error");
+
+            return "true";
+        }catch (IOException e){
+            System.out.println(e.getMessage());
+            return "false";
         }
     }
 
