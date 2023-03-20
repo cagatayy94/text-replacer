@@ -1,5 +1,6 @@
 package org.example;
 
+import com.google.common.base.Utf8;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -131,9 +132,13 @@ public class Main {
         return files;
     }
 
+    private static void translateNewOneNewLibrary(File file, JSONObject cache) {
+
+    }
+
     private static void translateNewOne(File file, JSONObject cache) {
         try {
-            Document document = Jsoup.parse(file);
+            Document document = Jsoup.parse(file + "UTF-8");
 
             // Filter tags and crappy elements
             for(Element e: document.getAllElements()){
@@ -163,11 +168,12 @@ public class Main {
                 }
             }
 
+
             File translatedFile = new File(file.getPath().substring(0, 56)+"/translated/"+file.getPath().substring(66));
             translatedFile.getParentFile().mkdirs();
             if (translatedFile.createNewFile()) {
                 PrintWriter writer = new PrintWriter(translatedFile, StandardCharsets.UTF_8);
-                writer.println(document.html());
+                writer.println(document.toString());
                 writer.close();
             }else{
                 throw new Exception("File cannot created");
